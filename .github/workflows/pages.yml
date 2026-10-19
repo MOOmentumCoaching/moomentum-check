@@ -1,4 +1,4 @@
-name: Publish game to GitHub Pages
+name: Publish to GitHub Pages
 
 on:
   push:
@@ -27,10 +27,10 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Upload game
+      - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
