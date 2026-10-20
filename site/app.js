@@ -1,20 +1,28 @@
 /*
   MOOmentum Mental Fitness Character — app logic.
 
-  Nothing is saved anywhere. Where someone is in the assessment lives in
+  Nothing is sent anywhere. Where someone is in the assessment lives in
   the page address (after the #), so the browser Back button works and a
   finished report can be bookmarked or shared as a link:
 
-    #q=3&n=Sam&a=74            on question 3, answers so far
-    #r=7486359267&n=Sam&d=...  a finished report
+    #q=3&n=Sam&a=74                  on question 3, answers so far
+    #r=5463263745&n=Sam&d=...&s=7    a finished report
+    ...&p=4352152634&pd=...          a retake, compared with the earlier scores
 
-  Each score is one character: 1–9, with 0 standing for 10.
+  Each score is one character from 1 to 7. Reports made before the 1–7 scale
+  have no s=7 and use 1–10 (0 standing for 10); they are converted on opening.
+
+  The only thing kept on the device is the 28-day plan's daily ticks, saved
+  in this browser's localStorage under the report link.
 */
 (() => {
   const C = window.MOO_CONTENT;
   const PILLARS = C.pillars;
   const COUNT = PILLARS.length;
   const ADVANCE_DELAY = 280;
+  const SCALE = 7;
+  const PLAN_DAYS = 28;
+  const TICKS_PREFIX = "moo-reset-ticks:";
   const app = document.getElementById("app");
   let advanceTimer = null;
 
@@ -26,13 +34,20 @@
   // *word* -> highlighted word
   const highlight = (text) => esc(text).replace(/\*(.+?)\*/g, "<b>$1</b>");
 
-  const encodeScores = (scores) => scores.map((s) => (s === 10 ? "0" : String(s))).join("");
-  const decodeScores = (text) => [...(text || "")].map((ch) => (ch === "0" ? 10 : Number(ch)));
-  const validScores = (text) => new RegExp(`^[0-9]{${COUNT}}$`).test(text || "");
+  const encodeScores = (scores) => scores.join("");
+  const decodeScores = (text) => [...(text || "")].map(Number);
+  const validScores = (text) => new RegExp(`^[1-${SCALE}]{${COUNT}}$`).test(text || "");
+
+  // Reports from before the 1–7 scale: 1–10 per pillar, with 0 standing for 10.
+  const validLegacyScores = (text) => new RegExp(`^[0-9]{${COUNT}}$`).test(text || "");
+  const legacyTo7 = (text) => [...text]
+    .map((ch) => (ch === "0" ? 10 : Number(ch)))
+    .map((v) => Math.min(SCALE, Math.max(1, Math.round(1 + ((v - 1) * (SCALE - 1)) / 9))));
 
   const band = (score) => C.bands.find((b) => score <= b.max);
   const rank = (total) => C.ranks.find((r) => total < r.below).label;
   const icon = (p) => `brand/pillar-icons/${p.icon}.webp`;
+  const fill = (text, values) => text.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
   const twoDigits = (n) => String(n).padStart(2, "0");
 
   function today() {
@@ -47,6 +62,23 @@
   }
 
   const readState = () => new URLSearchParams(location.hash.slice(1));
+
+  // Earlier scores carried into a retake so the new report can compare.
+  const previous = (state) => (validScores(state.get("p")) ? { p: state.get("p"), pd: state.get("pd") || "" } : {});
+
+  // Daily ticks live on this device only, keyed by the report link.
+  function loadTicks(key) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TICKS_PREFIX + key) || "[]");
+      return Array.from({ length: PLAN_DAYS }, (_, i) => saved[i] === true);
+    } catch {
+      return Array(PLAN_DAYS).fill(false);
+    }
+  }
+
+  function saveTicks(key, ticks) {
+    try { localStorage.setItem(TICKS_PREFIX + key, JSON.stringify(ticks)); } catch { /* storage blocked: ticks just won't persist */ }
+  }
 
   function go(params, { replace = false } = {}) {
     const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== "" && v != null));
@@ -65,13 +97,14 @@
 
   function renderIntro(state) {
     const t = C.intro;
-    document.title = "MOOmentum Mental Fitness Character";
+    document.title = "MOOmentum 28-Day Mental Fitness Reset";
     app.innerHTML = `
       <main class="screen">
         <section class="card intro-card">
           <img class="front-logo" src="brand/front-logo.webp" alt="MOOmentum — Mental fitness and performance coaching" width="1934" height="517">
           <h1 class="headline" tabindex="-1" data-focus>${t.headline.map((line) => `<span>${highlight(line)}</span>`).join("")}</h1>
           <ul class="points">${t.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+          ${state.get("p") ? `<p class="retake-note">${esc(fill(t.retakeNote, { date: prettyDate(state.get("pd")) || "before" }))}</p>` : ""}
           <form class="name-form" novalidate>
             <div class="ask">
               <img class="cow" src="brand/cow.webp" alt="" width="324" height="216">
@@ -86,12 +119,13 @@
 
     app.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
-      go({ q: 1, n: app.querySelector("#player").value.trim() });
+      go({ q: 1, n: app.querySelector("#player").value.trim(), ...previous(state) });
     });
   }
 
   function renderQuiz(state) {
-    const answers = decodeScores(state.get("a")).filter((s) => s >= 1 && s <= 10).slice(0, COUNT);
+    const answers = decodeScores(state.get("a")).filter((s) => s >= 1 && s <= SCALE).slice(0, COUNT);
+    const earlier = previous(state);
     const name = state.get("n") || "";
     // Never skip ahead past the first unanswered question.
     const index = Math.min(Math.max(Number(state.get("q")) || 1, 1), answers.length + 1, COUNT) - 1;
@@ -118,12 +152,12 @@
           <h2 id="question" tabindex="-1" data-focus>${esc(pillar.question)}</h2>
           <p class="instruction">${esc(t.instruction)}</p>
           <div class="scale" role="radiogroup" aria-labelledby="question">
-            ${Array.from({ length: 10 }, (_, i) => i + 1)
+            ${Array.from({ length: SCALE }, (_, i) => i + 1)
               .map((n) => `<button type="button" role="radio" aria-checked="${chosen === n}" class="${chosen === n ? "selected" : ""}" data-score="${n}"
-                aria-label="${n}${n === 1 ? `, ${t.lowLabel}` : n === 10 ? `, ${t.highLabel}` : ""}">${n}</button>`)
+                aria-label="${n}${n === 1 ? `, ${t.lowLabel}` : n === SCALE ? `, ${t.highLabel}` : ""}">${n}</button>`)
               .join("")}
           </div>
-          <div class="scale-labels" aria-hidden="true"><span>1 · ${esc(t.lowLabel)}</span><span>10 · ${esc(t.highLabel)}</span></div>
+          <div class="scale-labels" aria-hidden="true"><span>1 · ${esc(t.lowLabel)}</span><span>${SCALE} · ${esc(t.highLabel)}</span></div>
           <footer class="quiz-actions">
             <button type="button" class="btn ghost" data-back>← Back</button>
             <button type="button" class="btn primary" data-next ${chosen ? "" : "disabled"}>${last ? "See my report" : "Next pillar"} →</button>
@@ -132,15 +166,15 @@
       </main>`;
 
     const next = (scores) => {
-      if (last) go({ r: encodeScores(scores), n: name, d: today() });
-      else go({ q: index + 2, n: name, a: encodeScores(scores) });
+      if (last) go({ r: encodeScores(scores), n: name, d: today(), s: SCALE, ...earlier });
+      else go({ q: index + 2, n: name, a: encodeScores(scores), ...earlier });
     };
 
     const choose = (score) => {
       const updated = answers.slice();
       updated[index] = score;
       // Show the choice straight away, then move on.
-      go({ q: index + 1, n: name, a: encodeScores(updated) }, { replace: true });
+      go({ q: index + 1, n: name, a: encodeScores(updated), ...earlier }, { replace: true });
       advanceTimer = setTimeout(() => next(updated), ADVANCE_DELAY);
     };
 
@@ -148,11 +182,11 @@
       button.addEventListener("click", () => choose(Number(button.dataset.score))));
     app.querySelector("[data-next]").addEventListener("click", () => chosen && next(answers));
     app.querySelector("[data-back]").addEventListener("click", () =>
-      index === 0 ? go({ n: name }) : go({ q: index, n: name, a: encodeScores(answers) }));
+      index === 0 ? go({ n: name, ...earlier }) : go({ q: index, n: name, a: encodeScores(answers), ...earlier }));
 
     quizKeys = (event) => {
       if (event.target.tagName === "INPUT" || event.metaKey || event.ctrlKey || event.altKey) return;
-      if (/^[0-9]$/.test(event.key)) choose(event.key === "0" ? 10 : Number(event.key));
+      if (new RegExp(`^[1-${SCALE}]$`).test(event.key)) choose(Number(event.key));
     };
   }
 
@@ -161,6 +195,7 @@
     const name = (state.get("n") || "").trim();
     const taken = prettyDate(state.get("d"));
     const total = scores.reduce((sum, s) => sum + s, 0);
+    const maxTotal = COUNT * SCALE;
     const ranked = scores.map((score, index) => ({ score, index, pillar: PILLARS[index] }));
     // Ties go to the pillar that comes first in the list.
     const strengths = [...ranked].sort((a, b) => b.score - a.score || a.index - b.index).slice(0, 3);
@@ -170,6 +205,23 @@
       .slice(0, 3);
     const top = strengths[0];
     const R = C.report;
+    const P = C.plan;
+    const earlier = validScores(state.get("p")) ? decodeScores(state.get("p")) : null;
+    const earlierDate = prettyDate(state.get("pd"));
+    const ticksKey = `r=${state.get("r")}&n=${name}&d=${state.get("d") || ""}`;
+    const ticks = loadTicks(ticksKey);
+
+    const dayBoxes = (week) => Array.from({ length: 7 }, (_, i) => {
+      const day = week * 7 + i;
+      return `<label class="day"><input type="checkbox" data-day="${day}" ${ticks[day] ? "checked" : ""}><span>${day + 1}</span></label>`;
+    }).join("");
+
+    const weekHead = (n) => `<span class="priority">${esc(fill(P.week, { n }))} · ${esc(fill(P.days, { from: (n - 1) * 7 + 1, to: n * 7 }))}</span>`;
+
+    const delta = (now, before) => {
+      const d = now - before;
+      return `<span class="delta ${d > 0 ? "up" : d < 0 ? "down" : "same"}">${d > 0 ? "+" : ""}${d === 0 ? "=" : d}</span>`;
+    };
 
     document.title = name ? `${name}'s MOOmentum report` : "Your MOOmentum report";
     app.innerHTML = `
@@ -185,7 +237,7 @@
             <div class="overall">
               <span>Overall</span>
               <strong>${total}</strong>
-              <small>/100 · ${esc(rank(total))}</small>
+              <small>/${maxTotal} · ${esc(rank(total))}</small>
             </div>
           </header>
 
@@ -197,9 +249,28 @@
               <p class="eyebrow">Your character type</p>
               <h2>${esc(top.pillar.type)}</h2>
               <p class="summary">${esc(top.pillar.summary)}</p>
-              <p>Your strongest pillar is <strong>${esc(top.pillar.name)}</strong> (${top.score}/10). Use it as your signature strength while you build the rest.</p>
+              <p>Your strongest pillar is <strong>${esc(top.pillar.name)}</strong> (${top.score}/${SCALE}). Use it as your signature strength while you build the rest.</p>
             </div>
           </section>
+
+          ${earlier ? `
+          <section class="block progress-block">
+            <h2 class="section-title">${esc(R.progressTitle)}</h2>
+            <p class="lead">${esc(earlierDate ? fill(R.progressLead, { date: earlierDate }) : R.progressLeadNoDate)}</p>
+            <div class="progress-total">
+              <div><span>${esc(R.before)}</span><b>${earlier.reduce((a, v) => a + v, 0)}</b><small>/${maxTotal}</small></div>
+              <div><span>${esc(R.after)}</span><b>${total}</b><small>/${maxTotal}</small></div>
+              ${delta(total, earlier.reduce((a, v) => a + v, 0))}
+            </div>
+            <ol class="compare-list">
+              ${ranked.map(({ score, index, pillar }) => `<li>
+                <img src="${icon(pillar)}" alt="" width="28" height="28">
+                <span class="compare-name">${esc(pillar.name)}</span>
+                <span class="compare-scores">${earlier[index]} → <b>${score}</b>/${SCALE}</span>
+                ${delta(score, earlier[index])}
+              </li>`).join("")}
+            </ol>
+          </section>` : ""}
 
           <section class="block">
             <h2 class="section-title">Your ten pillars</h2>
@@ -212,8 +283,8 @@
                 return `<li class="stat">
                   <img src="${icon(pillar)}" alt="" width="32" height="32">
                   <span class="stat-name">${esc(pillar.name)}</span>
-                  <span class="stat-score"><b>${score}</b>/10</span>
-                  <span class="dots" aria-hidden="true">${Array.from({ length: 10 }, (_, i) => `<i class="${i < score ? b.colour : ""}"></i>`).join("")}</span>
+                  <span class="stat-score"><b>${score}</b>/${SCALE}</span>
+                  <span class="dots" aria-hidden="true">${Array.from({ length: SCALE }, (_, i) => `<i class="${i < score ? b.colour : ""}"></i>`).join("")}</span>
                   <span class="stat-band ${b.colour}">${esc(b.label)}</span>
                 </li>`;
               }).join("")}
@@ -223,25 +294,40 @@
           <section class="block">
             <h2 class="section-title">Your top strengths</h2>
             <ul class="strengths">
-              ${strengths.map(({ score, pillar }) => `<li><img src="${icon(pillar)}" alt="" width="40" height="40"><span>${esc(pillar.name)}</span><b>${score}/10</b></li>`).join("")}
+              ${strengths.map(({ score, pillar }) => `<li><img src="${icon(pillar)}" alt="" width="40" height="40"><span>${esc(pillar.name)}</span><b>${score}/${SCALE}</b></li>`).join("")}
             </ul>
           </section>
 
-          <section class="block">
-            <h2 class="section-title">Your next mission</h2>
-            <p class="lead">Your three lowest pillars right now, with small actions to try. Start small, repeat it, then level up.</p>
+          <section class="block plan">
+            <h2 class="section-title">${esc(P.title)}</h2>
+            <p class="lead">${esc(P.lead)}</p>
+            <p class="plan-count" data-count>${esc(fill(P.ticked, { n: ticks.filter(Boolean).length }))}</p>
             <div class="missions">
               ${focus.map(({ score, pillar }, i) => `
-                <section class="mission">
+                <section class="mission week">
                   <header>
-                    <span class="priority">Priority ${i + 1}</span>
+                    ${weekHead(i + 1)}
                     <img src="${icon(pillar)}" alt="" width="44" height="44">
-                    <div><h3>${esc(pillar.name)}</h3><p>${score}/10 · ${esc(band(score).label)}</p></div>
+                    <div><h3>${esc(pillar.name)}</h3><p>${score}/${SCALE} · ${esc(band(score).label)}</p></div>
                   </header>
+                  <p class="why">${esc(pillar.why)}</p>
                   <ol>${pillar.actions.map((a) => `<li>${esc(a)}</li>`).join("")}</ol>
+                  <p class="week-tip">${esc(P.tip)}</p>
+                  <fieldset class="days"><legend>${esc(P.checkIn)}</legend>${dayBoxes(i)}</fieldset>
                 </section>`).join("")}
+              <section class="mission week outperform">
+                <header>
+                  ${weekHead(4)}
+                  <img src="brand/moo-mark.webp" alt="" width="44" height="44">
+                  <div><h3>${esc(P.outperformTitle)}</h3></div>
+                </header>
+                <p class="why">${esc(P.outperformText)}</p>
+                <p class="week-tip">${esc(P.tip)}</p>
+                <fieldset class="days"><legend>${esc(P.checkIn)}</legend>${dayBoxes(3)}</fieldset>
+                <p class="retake-hint print-only">${esc(P.retakeHint)}</p>
+                <button type="button" class="btn primary no-print" data-retake>↻ ${esc(P.retakeButton)}</button>
+              </section>
             </div>
-            <p class="tip"><strong>Player tip:</strong> ${esc(R.playerTip)}</p>
           </section>
 
           <section class="block keep no-print">
@@ -267,6 +353,12 @@
     const status = app.querySelector(".status");
     const say = (text) => { status.textContent = text; };
 
+    app.querySelectorAll("[data-day]").forEach((box) => box.addEventListener("change", () => {
+      ticks[Number(box.dataset.day)] = box.checked;
+      saveTicks(ticksKey, ticks);
+      app.querySelector("[data-count]").textContent = fill(P.ticked, { n: ticks.filter(Boolean).length });
+    }));
+
     app.querySelector("[data-copy]").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(location.href);
@@ -278,7 +370,9 @@
     app.querySelector("[data-print]").addEventListener("click", () => window.print());
     app.querySelector("[data-share]")?.addEventListener("click", () =>
       navigator.share({ title: document.title, url: location.href }).catch(() => {}));
-    app.querySelector("[data-retake]").addEventListener("click", () => go({ n: name }));
+    // A retake carries these scores along, so the new report can show before and after.
+    app.querySelectorAll("[data-retake]").forEach((button) =>
+      button.addEventListener("click", () => go({ n: name, p: state.get("r"), pd: state.get("d") })));
   }
 
   // ---------- routing ----------
@@ -290,7 +384,15 @@
     quizKeys = null;
     const state = readState();
     const before = app.dataset.screen;
-    if (validScores(state.get("r"))) renderReport(state);
+    // Old 1–10 report links are converted to 1–7, keeping the rest of the link.
+    if (state.get("s") !== String(SCALE) && validLegacyScores(state.get("r"))) {
+      state.set("r", encodeScores(legacyTo7(state.get("r"))));
+      state.set("s", String(SCALE));
+      state.delete("p");
+      state.delete("pd");
+      history.replaceState(null, "", `#${state}`);
+    }
+    if (state.get("s") === String(SCALE) && validScores(state.get("r"))) renderReport(state);
     else if (state.has("q")) renderQuiz(state);
     else renderIntro(state);
 

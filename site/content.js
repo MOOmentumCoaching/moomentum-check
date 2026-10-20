@@ -9,12 +9,15 @@
 window.MOO_CONTENT = {
   intro: {
     // One entry per line. Words wrapped in *stars* are highlighted.
-    headline: [`Discover`, `your *character*.`, `See who *you* are.`],
+    headline: [`Discover`, `your *character*.`, `Then build it in *28 days*.`],
     points: [
-      `10 quick questions`,
-      `About 2 minutes`,
-      `A personal report you can save and come back to`,
+      `A 2-minute assessment`,
+      `Your ten-pillar report`,
+      `A personal 28-day plan`,
+      `Retake on day 28 and compare`,
     ],
+    // Shown on the front page when someone is retaking to compare.
+    retakeNote: `Retake: your new scores will be compared with your report from {date}.`,
     namePrompt: `WHAT IS YOUR NAME?`,
     namePlaceholder: `Enter your name`,
     startButton: `START`,
@@ -26,28 +29,49 @@ window.MOO_CONTENT = {
     highLabel: `Completely true`,
   },
 
+  // Each pillar is scored from 1 to 7.
+
   // Score bands used for the colours on each pillar.
   bands: [
-    { max: 3, label: `Needs support`, colour: `red` },
-    { max: 6, label: `Building`, colour: `amber` },
-    { max: 10, label: `Strong`, colour: `green` },
+    { max: 2, label: `Needs support`, colour: `red` },
+    { max: 4, label: `Building`, colour: `amber` },
+    { max: 7, label: `Strong`, colour: `green` },
   ],
 
-  // Overall rank, from the total of all ten scores (10–100).
+  // Overall rank, from the total of all ten scores (10–70).
   ranks: [
-    { below: 40, label: `Foundation` },
-    { below: 55, label: `Emerging` },
-    { below: 70, label: `Developing` },
-    { below: 85, label: `Strong` },
-    { below: 101, label: `Mentathlete` },
+    { below: 28, label: `Foundation` },
+    { below: 39, label: `Emerging` },
+    { below: 49, label: `Developing` },
+    { below: 60, label: `Strong` },
+    { below: 71, label: `Mentathlete` },
   ],
 
   report: {
     starting: `This isn't your permanent rating. It's your starting build.`,
-    playerTip: `Pick one action — not all nine. Consistency earns more progress than trying to change everything at once.`,
     keepTitle: `Keep your report`,
-    keepText: `Nothing is stored on our side. Bookmark this page, copy the link, or save it as a PDF to keep your results. Come back in 7 days, retake it, and see what has moved.`,
+    keepText: `Nothing is stored on our side. Bookmark this page, copy the link, or save it as a PDF to keep your results and your plan. Your daily ticks are saved on this device only.`,
+    progressTitle: `Your progress`,
+    progressLead: `Compared with your assessment on {date}.`,
+    progressLeadNoDate: `Compared with your previous assessment.`,
+    before: `Before`,
+    after: `Now`,
     disclaimer: `This is a self-reflection tool, not a medical or psychological assessment. If you are struggling, please speak to your GP or a qualified professional.`,
+  },
+
+  // The 28-day plan, built from the three lowest pillars.
+  plan: {
+    title: `Your 28-day plan`,
+    lead: `One pillar a week, starting with your lowest. Small, daily and repeatable beats big and occasional.`,
+    week: `Week {n}`,
+    days: `Days {from}–{to}`,
+    tip: `Pick one action. Do it daily.`,
+    checkIn: `Tick each day you did it`,
+    ticked: `{n} of 28 days ticked`,
+    outperformTitle: `Outperform week`,
+    outperformText: `Keep the action that worked best from weeks 1 to 3 and do it every day. On day 28, retake the assessment and compare your scores.`,
+    retakeButton: `Retake and compare`,
+    retakeHint: `On day 28: retake the assessment to see what has moved.`,
   },
 
   pillars: [
@@ -58,6 +82,7 @@ window.MOO_CONTENT = {
       character: `self-aware-operator`,
       type: `The Self-Aware Operator`,
       summary: `You notice what you feel and use it to choose your response, rather than letting it choose for you.`,
+      why: `Noticing what you feel gives you a choice in how you respond.`,
       question: `I can recognise what I am feeling and understand how it affects me.`,
       actions: [
         `Name one emotion you feel each day — without judging it.`,
@@ -72,6 +97,7 @@ window.MOO_CONTENT = {
       character: `mission-led-player`,
       type: `The Mission-Led Player`,
       summary: `You know what matters to you, and that sense of direction keeps you moving when things get hard.`,
+      why: `A clear direction gives you something to return to when motivation dips.`,
       question: `I have a clear sense of what matters to me and what I am working towards.`,
       actions: [
         `Choose one goal that genuinely matters this month.`,
@@ -86,6 +112,7 @@ window.MOO_CONTENT = {
       character: `adaptive-thinker`,
       type: `The Adaptive Thinker`,
       summary: `You can change your thinking when the situation changes, and find a new route when the old one is blocked.`,
+      why: `Adjusting your thinking helps you find a way forward when plans change.`,
       question: `I can adapt my thinking when circumstances or information change.`,
       actions: [
         `Find one alternative explanation for a frustrating situation.`,
@@ -100,6 +127,7 @@ window.MOO_CONTENT = {
       character: `creative-playmaker`,
       type: `The Creative Playmaker`,
       summary: `You come up with fresh ideas and different angles, which helps you solve problems others get stuck on.`,
+      why: `Feeling stuck often calls for a different approach, and new ideas take practice.`,
       question: `I can generate different ideas and approaches when solving a problem.`,
       actions: [
         `List five possible answers before choosing one.`,
@@ -114,6 +142,7 @@ window.MOO_CONTENT = {
       character: `recovery-specialist`,
       type: `The Recovery Specialist`,
       summary: `You protect your rest, and it shows in your energy, focus and mood.`,
+      why: `Sleep supports your attention, mood and learning.`,
       question: `My sleep leaves me rested and able to function effectively.`,
       actions: [
         `Keep the same wake-up time for the next three days.`,
@@ -128,6 +157,7 @@ window.MOO_CONTENT = {
       character: `fuelled-performer`,
       type: `The Fuelled Performer`,
       summary: `You fuel yourself well, giving your body and mind steady energy to perform.`,
+      why: `Regular fuel gives you steady energy to meet daily demands.`,
       question: `My usual food and hydration choices support my energy and performance.`,
       actions: [
         `Start the day with a full glass of water.`,
@@ -142,6 +172,7 @@ window.MOO_CONTENT = {
       character: `active-engine`,
       type: `The Active Engine`,
       summary: `You keep your body moving, and that movement powers your mood and mental sharpness.`,
+      why: `Movement lifts your mood and lets you practise effort and persistence.`,
       question: `I move regularly enough to support my physical and mental fitness.`,
       actions: [
         `Take a ten-minute walk today.`,
@@ -156,6 +187,7 @@ window.MOO_CONTENT = {
       character: `pressure-controller`,
       type: `The Pressure Controller`,
       summary: `You spot pressure building and have ways to bring it back down before it takes over.`,
+      why: `Pressure is easier to handle when you have more than one way to respond.`,
       question: `I recognise pressure building and have effective ways to manage it.`,
       actions: [
         `Take five slow breaths with a longer exhale.`,
@@ -170,6 +202,7 @@ window.MOO_CONTENT = {
       character: `team-builder`,
       type: `The Team Builder`,
       summary: `You have people you can be open with and rely on, and you are someone others can rely on too.`,
+      why: `The right people give you perspective, encouragement and support.`,
       question: `I feel connected to people I can speak to openly and rely upon.`,
       actions: [
         `Message someone you trust and ask how they really are.`,
@@ -184,6 +217,7 @@ window.MOO_CONTENT = {
       character: `courageous-starter`,
       type: `The Courageous Starter`,
       summary: `You act even when it feels uncomfortable, and that willingness to start opens doors for you.`,
+      why: `Small brave actions stop fear from getting the deciding vote.`,
       question: `I take necessary action even when I feel uncertain or uncomfortable.`,
       actions: [
         `Choose the smallest version of the action you are avoiding.`,
