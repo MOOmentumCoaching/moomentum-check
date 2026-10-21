@@ -15,8 +15,6 @@ window.MOO_CONTENT = {
       `About 2 minutes`,
       `A personal report to keep`,
     ],
-    // Shown on the front page when someone restarts from their report.
-    retakeNote: `Restart: your new scores will be compared with your report from {date}.`,
     namePrompt: `WHAT IS YOUR NAME?`,
     namePlaceholder: `Enter your name`,
     startButton: `START`,
@@ -49,16 +47,11 @@ window.MOO_CONTENT = {
   report: {
     starting: `This isn't your permanent rating. It's your starting build.`,
     keepTitle: `Keep your report`,
-    keepText: `Nothing is stored on our side. Bookmark this page, copy the link, or save it as a PDF to keep your results. You can restart whenever you like and compare.`,
+    keepText: `Nothing is saved anywhere, not even on your phone. Your link is your report, so bookmark it, copy it or save it as a PDF if you want to look back.`,
     missionTitle: `Your next mission`,
     missionLead: `Your three lowest pillars right now, with small actions to try. Start small, repeat it, then level up.`,
     tip: `Pick one action. Do it daily.`,
     restartButton: `Restart`,
-    progressTitle: `Your progress`,
-    progressLead: `Compared with your assessment on {date}.`,
-    progressLeadNoDate: `Compared with your previous assessment.`,
-    before: `Before`,
-    after: `Now`,
     disclaimer: `This is a self-reflection tool, not a medical or psychological assessment. If you are struggling, please speak to your GP or a qualified professional.`,
   },
 
@@ -73,7 +66,7 @@ window.MOO_CONTENT = {
       why: `Noticing what you feel gives you a choice in how you respond.`,
       question: `I can recognise what I am feeling and understand how it affects me.`,
       actions: [
-        `Name one emotion you feel each day — without judging it.`,
+        `Name one emotion you feel each day, without judging it.`,
         `Pause before reacting and ask: what is this feeling telling me?`,
         `Write down one trigger and the response it created.`,
       ],

@@ -146,16 +146,6 @@ button { font: inherit; cursor: pointer; }
   color: var(--brand-dark);
 }
 
-.retake-note {
-  margin: -8px 0 20px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--brand-wash);
-  border: 1px dashed var(--brand);
-  font-size: 14px;
-  color: var(--brand-dark);
-}
-
 .name-form { display: grid; gap: 14px; }
 
 .ask {
@@ -510,52 +500,6 @@ button { font: inherit; cursor: pointer; }
 
 .mission .why { margin: 0 0 10px; font-style: italic; color: var(--muted); }
 
-/* ---------- before and after ---------- */
-
-.progress-total {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 0 0 14px;
-  padding: 12px 14px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-
-.progress-total div { display: grid; }
-.progress-total span { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.progress-total b { font-size: 28px; line-height: 1.1; color: var(--brand); }
-.progress-total small { font-size: 12px; color: var(--muted); }
-.progress-total .delta { margin-left: auto; font-size: 18px; }
-
-.compare-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-
-.compare-list li {
-  display: grid;
-  grid-template-columns: 28px 1fr auto 44px;
-  align-items: center;
-  gap: 10px;
-}
-
-.compare-list img { width: 28px; height: 28px; }
-.compare-name { font-weight: 700; }
-.compare-scores { font-size: 14px; color: var(--muted); }
-.compare-scores b { color: var(--ink); }
-
-.delta {
-  justify-self: end;
-  min-width: 40px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 800;
-  text-align: center;
-}
-
-.delta.up { background: #dff1e4; color: var(--green); }
-.delta.down { background: #fbe3e1; color: var(--red); }
-.delta.same { background: var(--empty); color: var(--muted); }
-
 .tip {
   margin: 16px 0 0;
   padding: 12px 14px;
@@ -593,9 +537,8 @@ button { font: inherit; cursor: pointer; }
   .no-print { display: none !important; }
   .print-only { display: block; margin: 14px 0 0; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .character, .mission, .stat, .strengths li, .tip, .compare-list li, .progress-total { break-inside: avoid; }
+  .character, .mission, .stat, .strengths li, .tip,  { break-inside: avoid; }
   .mission .why { margin-bottom: 4px; }
-  .compare-list { gap: 3px; }
   .character { grid-template-columns: 180px 1fr; align-items: center; }
   .stage { height: 200px; }
   .strengths { grid-template-columns: repeat(3, 1fr); }

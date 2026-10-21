@@ -7,7 +7,6 @@
 
     #q=3&n=Sam&a=74                  on question 3, answers so far
     #r=5463263745&n=Sam&d=...&s=7    a finished report
-    ...&p=4352152634&pd=...          a restart, compared with the earlier scores
 
   Each score is one character from 1 to 7. Reports made before the 1–7 scale
   have no s=7 and use 1–10 (0 standing for 10); they are converted on opening.
@@ -58,8 +57,11 @@
 
   const readState = () => new URLSearchParams(location.hash.slice(1));
 
-  // Earlier scores carried into a restart so the new report can compare.
-  const previous = (state) => (validScores(state.get("p")) ? { p: state.get("p"), pd: state.get("pd") || "" } : {});
+  // Ties go to the keystone pillar, the one that tends to affect the others most:
+  // body first, then regulation and relationships, then direction and action, then thinking.
+  const KEYSTONE = ["sleep", "movement", "stress-management", "nutrition", "connection",
+    "emotional-awareness", "purpose", "courage", "cognitive-agility", "creativity"];
+  const keystone = (pillar) => KEYSTONE.indexOf(pillar.icon);
 
   function go(params, { replace = false } = {}) {
     const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== "" && v != null));
@@ -82,10 +84,9 @@
     app.innerHTML = `
       <main class="screen">
         <section class="card intro-card">
-          <img class="front-logo" src="brand/front-logo.webp" alt="MOOmentum — Mental fitness and performance coaching" width="1934" height="517">
+          <img class="front-logo" src="brand/front-logo.webp" alt="MOOmentum: Mental fitness and performance coaching" width="1934" height="517">
           <h1 class="headline" tabindex="-1" data-focus>${t.headline.map((line) => `<span>${highlight(line)}</span>`).join("")}</h1>
           <ul class="points">${t.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
-          ${state.get("p") ? `<p class="retake-note">${esc(fill(t.retakeNote, { date: prettyDate(state.get("pd")) || "before" }))}</p>` : ""}
           <form class="name-form" novalidate>
             <div class="ask">
               <img class="cow" src="brand/cow.webp" alt="" width="324" height="216">
@@ -100,13 +101,12 @@
 
     app.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
-      go({ q: 1, n: app.querySelector("#player").value.trim(), ...previous(state) });
+      go({ q: 1, n: app.querySelector("#player").value.trim() });
     });
   }
 
   function renderQuiz(state) {
     const answers = decodeScores(state.get("a")).filter((s) => s >= 1 && s <= SCALE).slice(0, COUNT);
-    const earlier = previous(state);
     const name = state.get("n") || "";
     // Never skip ahead past the first unanswered question.
     const index = Math.min(Math.max(Number(state.get("q")) || 1, 1), answers.length + 1, COUNT) - 1;
@@ -141,29 +141,27 @@
           <div class="scale-labels" aria-hidden="true"><span>1 · ${esc(t.lowLabel)}</span><span>${SCALE} · ${esc(t.highLabel)}</span></div>
           <footer class="quiz-actions">
             <button type="button" class="btn ghost" data-back>← Back</button>
-            <button type="button" class="btn primary" data-next ${chosen ? "" : "disabled"}>${last ? "See my report" : "Next pillar"} →</button>
           </footer>
         </section>
       </main>`;
 
     const next = (scores) => {
-      if (last) go({ r: encodeScores(scores), n: name, d: today(), s: SCALE, ...earlier });
-      else go({ q: index + 2, n: name, a: encodeScores(scores), ...earlier });
+      if (last) go({ r: encodeScores(scores), n: name, d: today(), s: SCALE });
+      else go({ q: index + 2, n: name, a: encodeScores(scores) });
     };
 
     const choose = (score) => {
       const updated = answers.slice();
       updated[index] = score;
       // Show the choice straight away, then move on.
-      go({ q: index + 1, n: name, a: encodeScores(updated), ...earlier }, { replace: true });
+      go({ q: index + 1, n: name, a: encodeScores(updated) }, { replace: true });
       advanceTimer = setTimeout(() => next(updated), ADVANCE_DELAY);
     };
 
     app.querySelectorAll("[data-score]").forEach((button) =>
       button.addEventListener("click", () => choose(Number(button.dataset.score))));
-    app.querySelector("[data-next]").addEventListener("click", () => chosen && next(answers));
     app.querySelector("[data-back]").addEventListener("click", () =>
-      index === 0 ? go({ n: name, ...earlier }) : go({ q: index, n: name, a: encodeScores(answers), ...earlier }));
+      index === 0 ? go({ n: name }) : go({ q: index, n: name, a: encodeScores(answers) }));
 
     quizKeys = (event) => {
       if (event.target.tagName === "INPUT" || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -178,21 +176,13 @@
     const total = scores.reduce((sum, s) => sum + s, 0);
     const maxTotal = COUNT * SCALE;
     const ranked = scores.map((score, index) => ({ score, index, pillar: PILLARS[index] }));
-    // Ties go to the pillar that comes first in the list.
-    const strengths = [...ranked].sort((a, b) => b.score - a.score || a.index - b.index).slice(0, 3);
+    const strengths = [...ranked].sort((a, b) => b.score - a.score || keystone(a.pillar) - keystone(b.pillar)).slice(0, 3);
     const focus = ranked
       .filter((r) => !strengths.includes(r))
-      .sort((a, b) => a.score - b.score || a.index - b.index)
+      .sort((a, b) => a.score - b.score || keystone(a.pillar) - keystone(b.pillar))
       .slice(0, 3);
     const top = strengths[0];
     const R = C.report;
-    const earlier = validScores(state.get("p")) ? decodeScores(state.get("p")) : null;
-    const earlierDate = prettyDate(state.get("pd"));
-
-    const delta = (now, before) => {
-      const d = now - before;
-      return `<span class="delta ${d > 0 ? "up" : d < 0 ? "down" : "same"}">${d > 0 ? "+" : ""}${d === 0 ? "=" : d}</span>`;
-    };
 
     document.title = name ? `${name}'s MOOmentum report` : "Your MOOmentum report";
     app.innerHTML = `
@@ -224,29 +214,10 @@
             </div>
           </section>
 
-          ${earlier ? `
-          <section class="block progress-block">
-            <h2 class="section-title">${esc(R.progressTitle)}</h2>
-            <p class="lead">${esc(earlierDate ? fill(R.progressLead, { date: earlierDate }) : R.progressLeadNoDate)}</p>
-            <div class="progress-total">
-              <div><span>${esc(R.before)}</span><b>${earlier.reduce((a, v) => a + v, 0)}</b><small>/${maxTotal}</small></div>
-              <div><span>${esc(R.after)}</span><b>${total}</b><small>/${maxTotal}</small></div>
-              ${delta(total, earlier.reduce((a, v) => a + v, 0))}
-            </div>
-            <ol class="compare-list">
-              ${ranked.map(({ score, index, pillar }) => `<li>
-                <img src="${icon(pillar)}" alt="" width="28" height="28">
-                <span class="compare-name">${esc(pillar.name)}</span>
-                <span class="compare-scores">${earlier[index]} → <b>${score}</b>/${SCALE}</span>
-                ${delta(score, earlier[index])}
-              </li>`).join("")}
-            </ol>
-          </section>` : ""}
-
           <section class="block">
             <h2 class="section-title">Your ten pillars</h2>
             <ul class="legend">
-              ${C.bands.map((b, i) => `<li><i class="${b.colour}"></i>${esc(b.label)} <span>(${i ? C.bands[i - 1].max + 1 : 1}–${b.max})</span></li>`).join("")}
+              ${C.bands.map((b, i) => `<li><i class="${b.colour}"></i>${esc(b.label)} <span>(${i ? C.bands[i - 1].max + 1 : 1} to ${b.max})</span></li>`).join("")}
             </ul>
             <ol class="stat-list">
               ${ranked.map(({ score, pillar }) => {
@@ -321,8 +292,8 @@
     app.querySelector("[data-print]").addEventListener("click", () => window.print());
     app.querySelector("[data-share]")?.addEventListener("click", () =>
       navigator.share({ title: document.title, url: location.href }).catch(() => {}));
-    // Restarting carries these scores along, so the new report can show before and after.
-    app.querySelector("[data-retake]").addEventListener("click", () => go({ n: name, p: state.get("r"), pd: state.get("d") }));
+    // Restart wipes everything and starts again from the front page.
+    app.querySelector("[data-retake]").addEventListener("click", () => go({}));
   }
 
   // ---------- routing ----------
@@ -338,8 +309,6 @@
     if (state.get("s") !== String(SCALE) && validLegacyScores(state.get("r"))) {
       state.set("r", encodeScores(legacyTo7(state.get("r"))));
       state.set("s", String(SCALE));
-      state.delete("p");
-      state.delete("pd");
       history.replaceState(null, "", `#${state}`);
     }
     if (state.get("s") === String(SCALE) && validScores(state.get("r"))) renderReport(state);

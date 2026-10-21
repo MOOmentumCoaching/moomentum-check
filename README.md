@@ -5,9 +5,11 @@ A ten-pillar mental fitness check. People answer 10 quick questions (about 2 min
 ## How it works
 
 1. **Name screen:** enter a name (optional) and press Start.
-2. **Ten questions:** one pillar per screen, scored 1 to 7. Tapping a number moves on automatically, and Back lets people change answers.
+2. **Ten questions:** one pillar per screen, scored 1 to 7. Tapping a number moves straight on, and Back lets people change answers.
 3. **Report:** character type, all ten pillars, top three strengths and next mission.
-4. **Restart:** the button at the bottom of the report starts again. The earlier scores travel in the link, so the new report shows before and after for every pillar.
+4. **Restart:** the button at the bottom of the report wipes everything and starts again. Each report keeps its own link, so an old link always reopens that report.
+
+Ties between pillars go to the keystone pillar, the one that tends to affect the others most: sleep, movement, stress management, nutrition, connection, emotional awareness, purpose, courage, cognitive agility, creativity.
 
 ## No saved data
 
