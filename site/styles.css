@@ -1,4 +1,4 @@
-/* MOOmentum Mental Fitness Character */
+/* MOOmentum Check */
 
 :root {
   --brand: #187d7b;
@@ -508,77 +508,7 @@ button { font: inherit; cursor: pointer; }
 
 .mission ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
 
-/* ---------- 28-day plan ---------- */
-
-.plan-count {
-  margin: -4px 0 14px;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--brand);
-}
-
-.week .why { margin: 0 0 10px; font-style: italic; color: var(--muted); }
-
-.week-tip {
-  margin: 12px 0 0;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: var(--brand-wash);
-  font-weight: 700;
-  color: var(--brand-dark);
-}
-
-.days {
-  margin: 12px 0 0;
-  padding: 0;
-  border: 0;
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-.days legend {
-  margin-bottom: 6px;
-  padding: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.day { position: relative; display: block; cursor: pointer; }
-
-.day input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-
-.day span {
-  display: grid;
-  place-items: center;
-  min-height: 40px;
-  border: 2px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.day input:checked + span {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
-}
-
-.day input:checked + span::after { content: " ✓"; }
-
-.day input:focus-visible + span { outline: 3px solid var(--brand-bright); outline-offset: 2px; }
-
-.outperform { border: 2px solid var(--brand); background: var(--brand-wash); }
-
-.outperform .btn { width: 100%; margin-top: 14px; }
+.mission .why { margin: 0 0 10px; font-style: italic; color: var(--muted); }
 
 /* ---------- before and after ---------- */
 
@@ -664,11 +594,7 @@ button { font: inherit; cursor: pointer; }
   .print-only { display: block; margin: 14px 0 0; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .character, .mission, .stat, .strengths li, .tip, .compare-list li, .progress-total { break-inside: avoid; }
-  .plan { break-before: page; }
-  .day span { min-height: 26px; font-size: 11px; }
-  .week-tip { margin-top: 6px; padding: 4px 10px; }
-  .days { margin-top: 6px; gap: 4px; }
-  .week .why { margin-bottom: 4px; }
+  .mission .why { margin-bottom: 4px; }
   .compare-list { gap: 3px; }
   .character { grid-template-columns: 180px 1fr; align-items: center; }
   .stage { height: 200px; }

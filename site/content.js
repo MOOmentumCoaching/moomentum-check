@@ -1,5 +1,5 @@
 /*
-  MOOmentum Mental Fitness Character — all the words in the app live here.
+  MOOmentum Check: all the words in the app live here.
 
   You can safely edit any text between the backticks (`like this`).
   Keep the pillars in the same order once people are using the app:
@@ -9,15 +9,14 @@
 window.MOO_CONTENT = {
   intro: {
     // One entry per line. Words wrapped in *stars* are highlighted.
-    headline: [`Discover`, `your *character*.`, `Then build it in *28 days*.`],
+    headline: [`Take the`, `*MOOmentum* check.`, `See where *you* are.`],
     points: [
-      `A 2-minute assessment`,
-      `Your ten-pillar report`,
-      `A personal 28-day plan`,
-      `Retake on day 28 and compare`,
+      `10 quick questions`,
+      `About 2 minutes`,
+      `A personal report to keep`,
     ],
-    // Shown on the front page when someone is retaking to compare.
-    retakeNote: `Retake: your new scores will be compared with your report from {date}.`,
+    // Shown on the front page when someone restarts from their report.
+    retakeNote: `Restart: your new scores will be compared with your report from {date}.`,
     namePrompt: `WHAT IS YOUR NAME?`,
     namePlaceholder: `Enter your name`,
     startButton: `START`,
@@ -50,28 +49,17 @@ window.MOO_CONTENT = {
   report: {
     starting: `This isn't your permanent rating. It's your starting build.`,
     keepTitle: `Keep your report`,
-    keepText: `Nothing is stored on our side. Bookmark this page, copy the link, or save it as a PDF to keep your results and your plan. Your daily ticks are saved on this device only.`,
+    keepText: `Nothing is stored on our side. Bookmark this page, copy the link, or save it as a PDF to keep your results. You can restart whenever you like and compare.`,
+    missionTitle: `Your next mission`,
+    missionLead: `Your three lowest pillars right now, with small actions to try. Start small, repeat it, then level up.`,
+    tip: `Pick one action. Do it daily.`,
+    restartButton: `Restart`,
     progressTitle: `Your progress`,
     progressLead: `Compared with your assessment on {date}.`,
     progressLeadNoDate: `Compared with your previous assessment.`,
     before: `Before`,
     after: `Now`,
     disclaimer: `This is a self-reflection tool, not a medical or psychological assessment. If you are struggling, please speak to your GP or a qualified professional.`,
-  },
-
-  // The 28-day plan, built from the three lowest pillars.
-  plan: {
-    title: `Your 28-day plan`,
-    lead: `One pillar a week, starting with your lowest. Small, daily and repeatable beats big and occasional.`,
-    week: `Week {n}`,
-    days: `Days {from}–{to}`,
-    tip: `Pick one action. Do it daily.`,
-    checkIn: `Tick each day you did it`,
-    ticked: `{n} of 28 days ticked`,
-    outperformTitle: `Outperform week`,
-    outperformText: `Keep the action that worked best from weeks 1 to 3 and do it every day. On day 28, retake the assessment and compare your scores.`,
-    retakeButton: `Retake and compare`,
-    retakeHint: `On day 28: retake the assessment to see what has moved.`,
   },
 
   pillars: [

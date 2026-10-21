@@ -1,5 +1,5 @@
 /*
-  MOOmentum Mental Fitness Character — app logic.
+  MOOmentum Check: app logic.
 
   Nothing is sent anywhere. Where someone is in the assessment lives in
   the page address (after the #), so the browser Back button works and a
@@ -7,13 +7,10 @@
 
     #q=3&n=Sam&a=74                  on question 3, answers so far
     #r=5463263745&n=Sam&d=...&s=7    a finished report
-    ...&p=4352152634&pd=...          a retake, compared with the earlier scores
+    ...&p=4352152634&pd=...          a restart, compared with the earlier scores
 
   Each score is one character from 1 to 7. Reports made before the 1–7 scale
   have no s=7 and use 1–10 (0 standing for 10); they are converted on opening.
-
-  The only thing kept on the device is the 28-day plan's daily ticks, saved
-  in this browser's localStorage under the report link.
 */
 (() => {
   const C = window.MOO_CONTENT;
@@ -21,8 +18,6 @@
   const COUNT = PILLARS.length;
   const ADVANCE_DELAY = 280;
   const SCALE = 7;
-  const PLAN_DAYS = 28;
-  const TICKS_PREFIX = "moo-reset-ticks:";
   const app = document.getElementById("app");
   let advanceTimer = null;
 
@@ -63,22 +58,8 @@
 
   const readState = () => new URLSearchParams(location.hash.slice(1));
 
-  // Earlier scores carried into a retake so the new report can compare.
+  // Earlier scores carried into a restart so the new report can compare.
   const previous = (state) => (validScores(state.get("p")) ? { p: state.get("p"), pd: state.get("pd") || "" } : {});
-
-  // Daily ticks live on this device only, keyed by the report link.
-  function loadTicks(key) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(TICKS_PREFIX + key) || "[]");
-      return Array.from({ length: PLAN_DAYS }, (_, i) => saved[i] === true);
-    } catch {
-      return Array(PLAN_DAYS).fill(false);
-    }
-  }
-
-  function saveTicks(key, ticks) {
-    try { localStorage.setItem(TICKS_PREFIX + key, JSON.stringify(ticks)); } catch { /* storage blocked: ticks just won't persist */ }
-  }
 
   function go(params, { replace = false } = {}) {
     const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== "" && v != null));
@@ -97,7 +78,7 @@
 
   function renderIntro(state) {
     const t = C.intro;
-    document.title = "MOOmentum 28-Day Mental Fitness Reset";
+    document.title = "MOOmentum Check";
     app.innerHTML = `
       <main class="screen">
         <section class="card intro-card">
@@ -205,18 +186,8 @@
       .slice(0, 3);
     const top = strengths[0];
     const R = C.report;
-    const P = C.plan;
     const earlier = validScores(state.get("p")) ? decodeScores(state.get("p")) : null;
     const earlierDate = prettyDate(state.get("pd"));
-    const ticksKey = `r=${state.get("r")}&n=${name}&d=${state.get("d") || ""}`;
-    const ticks = loadTicks(ticksKey);
-
-    const dayBoxes = (week) => Array.from({ length: 7 }, (_, i) => {
-      const day = week * 7 + i;
-      return `<label class="day"><input type="checkbox" data-day="${day}" ${ticks[day] ? "checked" : ""}><span>${day + 1}</span></label>`;
-    }).join("");
-
-    const weekHead = (n) => `<span class="priority">${esc(fill(P.week, { n }))} · ${esc(fill(P.days, { from: (n - 1) * 7 + 1, to: n * 7 }))}</span>`;
 
     const delta = (now, before) => {
       const d = now - before;
@@ -298,36 +269,22 @@
             </ul>
           </section>
 
-          <section class="block plan">
-            <h2 class="section-title">${esc(P.title)}</h2>
-            <p class="lead">${esc(P.lead)}</p>
-            <p class="plan-count" data-count>${esc(fill(P.ticked, { n: ticks.filter(Boolean).length }))}</p>
+          <section class="block">
+            <h2 class="section-title">${esc(R.missionTitle)}</h2>
+            <p class="lead">${esc(R.missionLead)}</p>
             <div class="missions">
               ${focus.map(({ score, pillar }, i) => `
-                <section class="mission week">
+                <section class="mission">
                   <header>
-                    ${weekHead(i + 1)}
+                    <span class="priority">Priority ${i + 1}</span>
                     <img src="${icon(pillar)}" alt="" width="44" height="44">
                     <div><h3>${esc(pillar.name)}</h3><p>${score}/${SCALE} · ${esc(band(score).label)}</p></div>
                   </header>
                   <p class="why">${esc(pillar.why)}</p>
                   <ol>${pillar.actions.map((a) => `<li>${esc(a)}</li>`).join("")}</ol>
-                  <p class="week-tip">${esc(P.tip)}</p>
-                  <fieldset class="days"><legend>${esc(P.checkIn)}</legend>${dayBoxes(i)}</fieldset>
                 </section>`).join("")}
-              <section class="mission week outperform">
-                <header>
-                  ${weekHead(4)}
-                  <img src="brand/moo-mark.webp" alt="" width="44" height="44">
-                  <div><h3>${esc(P.outperformTitle)}</h3></div>
-                </header>
-                <p class="why">${esc(P.outperformText)}</p>
-                <p class="week-tip">${esc(P.tip)}</p>
-                <fieldset class="days"><legend>${esc(P.checkIn)}</legend>${dayBoxes(3)}</fieldset>
-                <p class="retake-hint print-only">${esc(P.retakeHint)}</p>
-                <button type="button" class="btn primary no-print" data-retake>↻ ${esc(P.retakeButton)}</button>
-              </section>
             </div>
+            <p class="tip"><strong>Player tip:</strong> ${esc(R.tip)}</p>
           </section>
 
           <section class="block keep no-print">
@@ -343,7 +300,7 @@
 
           <footer class="report-foot">
             <p class="starting">${esc(R.starting)}</p>
-            <button type="button" class="btn primary no-print" data-retake>↻ Retake assessment</button>
+            <button type="button" class="btn primary no-print" data-retake>↻ ${esc(R.restartButton)}</button>
             <p class="print-only">Open this report again: ${esc(location.href)}</p>
             <p class="disclaimer">${esc(R.disclaimer)}</p>
           </footer>
@@ -352,12 +309,6 @@
 
     const status = app.querySelector(".status");
     const say = (text) => { status.textContent = text; };
-
-    app.querySelectorAll("[data-day]").forEach((box) => box.addEventListener("change", () => {
-      ticks[Number(box.dataset.day)] = box.checked;
-      saveTicks(ticksKey, ticks);
-      app.querySelector("[data-count]").textContent = fill(P.ticked, { n: ticks.filter(Boolean).length });
-    }));
 
     app.querySelector("[data-copy]").addEventListener("click", async () => {
       try {
@@ -370,9 +321,8 @@
     app.querySelector("[data-print]").addEventListener("click", () => window.print());
     app.querySelector("[data-share]")?.addEventListener("click", () =>
       navigator.share({ title: document.title, url: location.href }).catch(() => {}));
-    // A retake carries these scores along, so the new report can show before and after.
-    app.querySelectorAll("[data-retake]").forEach((button) =>
-      button.addEventListener("click", () => go({ n: name, p: state.get("r"), pd: state.get("d") })));
+    // Restarting carries these scores along, so the new report can show before and after.
+    app.querySelector("[data-retake]").addEventListener("click", () => go({ n: name, p: state.get("r"), pd: state.get("d") }));
   }
 
   // ---------- routing ----------
